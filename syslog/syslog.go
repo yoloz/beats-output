@@ -89,7 +89,7 @@ func (out *syslogOutput) init(beat beat.Info, c config) error {
 		return err
 	}
 
-	out.log.Info("Initialized syslog output. proto=%v address=%v severity=%v facility=%v",
+	out.log.Infof("Initialized syslog output. proto=%v address=%v severity=%v facility=%v",
 		out.proto, out.address, c.Severity, c.Facility)
 
 	return nil
@@ -117,9 +117,9 @@ func (out *syslogOutput) Publish(_ context.Context, batch publisher.Batch) error
 		serializedEvent, err := out.codec.Encode(out.beat.Beat, &event.Content)
 		if err != nil {
 			if event.Guaranteed() {
-				out.log.Errorf("Failed to serialize the event: %v", err)
+				out.log.Errorf("Failed to serialize[%v] the event: %v", event.Content, err)
 			} else {
-				out.log.Warnf("Failed to serialize the event: %v", err)
+				out.log.Warnf("Failed to serialize[%v] the event: %v", event.Content, err)
 			}
 
 			dropped++
@@ -132,7 +132,7 @@ func (out *syslogOutput) Publish(_ context.Context, batch publisher.Batch) error
 			if event.Guaranteed() {
 				out.log.Errorf("Sending event to remote syslog failed with: %v", err)
 			} else {
-				out.log.Warnf("Sending event to remote syslog failed failed with: %v", err)
+				out.log.Warnf("Sending event to remote syslog failed with: %v", err)
 			}
 
 			dropped++
