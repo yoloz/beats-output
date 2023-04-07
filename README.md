@@ -125,3 +125,7 @@ import (
 	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/spool"
 )
 ```
+
+:::caution
+配合本地开发的 7.10.2 版本的 beats,go.mod 中使用 beats 源码里的依赖
+:::
