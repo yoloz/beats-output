@@ -1,4 +1,4 @@
-module beats-output-syslog
+module beats-output
 
 go 1.20
 
