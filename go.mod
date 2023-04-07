@@ -1,4 +1,4 @@
-module beats-output
+module github.com/yoloz/beats-output
 
 go 1.20
 
