@@ -33,8 +33,7 @@ output.syslog:
   facility: "SYSLOG" # default syslog
   proto: "udp" # default udp
   codec.format:
-    # string: 'file:"%{[source]}" message:"%{[message]}"'
-	 string: 'timestamp:"%{[@timestamp]}" message:"%{[message]}"'
+	 string: "%{[message]}"
 ```
 
 ## 实现
