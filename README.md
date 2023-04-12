@@ -4,7 +4,6 @@ Simple Elastic Beats output to remote syslog plugin;
 
 uses [log/syslog](https://pkg.go.dev/log/syslog)
 
-> 引入对 beats 的依赖`go get github.com/elastic/beats/v7`
 
 ## 配置
 
@@ -26,12 +25,13 @@ filebeat.inputs:
 #output.console:
 #  pretty: true
 output.syslog:
-# default 127.0.0.1:514
   address: "127.0.0.1:514"
-  # default info
+# default info
   severity: "INFO"
-  facility: "SYSLOG" # default syslog
-  proto: "udp" # default udp
+# default syslog
+  facility: "SYSLOG"
+# default udp
+  proto: "udp"
   codec.format:
 	 string: "%{[message]}"
 ```
@@ -124,7 +124,3 @@ import (
 	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/spool"
 )
 ```
-
-:::caution
-配合本地开发的 7.10.2 版本的 beats,go.mod 中使用 beats 源码里的依赖
-:::
