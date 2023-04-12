@@ -33,7 +33,7 @@ output.syslog:
 # default udp
   proto: "udp"
   codec.format:
-	 string: "%{[message]}"
+    string: "%{[message]}"
 ```
 
 ## 实现
