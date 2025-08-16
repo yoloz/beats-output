@@ -1,0 +1,35 @@
+== Syslog output
+
+The `syslog` output sends events to the local syslog service using the
+standard library `log/syslog` package. This minimal implementation writes
+events as INFO messages using the configured facility and tag.
+
+Configuration options
+
+* `facility` - syslog facility to use (default: `daemon`)
+* `tag` - tag to identify the process (default: `beats`)
+* `batch_size` - batch size for output (default: 1000)
+* `retry` - number retry attempts (default: 3)
+* `network` - transport, `udp` or `tcp` (omit for local syslog)
+* `host` - remote `host:port` for network transports
+* `format` - `rfc3164` (default) or `rfc5424`
+
+Example
+
+[source,yaml]
+----
+output.syslog:
+  facility: "daemon"
+  tag: "filebeat"
+----
+
+Remote RFC5424 over TCP (octet-counting):
+
+[source,yaml]
+----
+output.syslog:
+  network: "tcp"
+  host: "10.0.0.5:6514"
+  format: "rfc5424"
+  tag: "filebeat"
+----
