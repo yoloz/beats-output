@@ -29,7 +29,7 @@ type config struct {
 
 func defaultConfig() config {
 	return config{
-		Network:   "",
+		Network:   "udp",
 		Host:      "",
 		Facility:  "user",
 		Severity:  "info",

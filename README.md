@@ -4,7 +4,7 @@ more output for beats
 
 ## syslog
 
-Simple Elastic Beats syslog output;
+[Simple Elastic Beats syslog output](/syslog/docs/syslog.asciidoc)
 
 ## 实现
 
@@ -32,6 +32,6 @@ package includes
 
 import (
 	//...
-	_ "github.com/yoloz/beats-output/syslog"
+	_ "github.com/yoloz/beats-output/v7/syslog"
 )
 ```

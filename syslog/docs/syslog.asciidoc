@@ -1,16 +1,18 @@
 == Syslog output
 
-The `syslog` output sends events to the local syslog service using the
-standard library `log/syslog` package. This minimal implementation writes
-events as INFO messages using the configured facility and tag.
+The `syslog` output sends events to a remote syslog server over UDP or TCP
+(configured with `network` and `host`). It does not write to the local
+syslog. If `host` is not configured the client will return an error and no
+messages will be sent. Messages are formatted according to the configured
+`format` option and use the configured facility, severity and tag values.
 
 Configuration options
 
-* `facility` - syslog facility to use (default: `daemon`)
+* `facility` - syslog facility to use (default: `user`)
 * `tag` - tag to identify the process (default: `beats`)
 * `batch_size` - batch size for output (default: 1000)
 * `retry` - number retry attempts (default: 3)
-* `network` - transport, `udp` or `tcp` (omit for local syslog)
+* `network` - transport, `udp` or `tcp` (default `udp`)
 * `host` - remote `host:port` for network transports
 * `format` - `rfc3164` (default) or `rfc5424`
 
@@ -19,7 +21,7 @@ Example
 [source,yaml]
 ----
 output.syslog:
-  facility: "daemon"
+  facility: "user"
   tag: "filebeat"
 ----
 

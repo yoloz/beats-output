@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -26,12 +27,8 @@ type remoteSysClient struct {
 }
 
 func newSyslogClient(c config) (outputs.Client, error) {
-	// If network and host are empty, keep using local syslog via previous implementation.
-	if strings.TrimSpace(c.Network) == "" || strings.TrimSpace(c.Host) == "" {
-		// Use local syslog writer implementation using stdlib
-		// We'll keep it simple: create a small shim that writes RFC5424 to local syslog via UDP localhost:514
-		// but to avoid side-effects, return a remoteSysClient with nil conn and no host -> will use local fallthrough.
-		return &remoteSysClient{cfg: c, appName: c.Tag}, nil
+	if strings.TrimSpace(c.Host) == "" {
+		return nil, fmt.Errorf("syslog host was not configured")
 	}
 
 	// dial remote
@@ -66,8 +63,11 @@ func (r *remoteSysClient) formatRFC5424(facility, severity string, appName strin
 	id := make([]byte, 4)
 	_, _ = rand.Read(id)
 	msgid := hex.EncodeToString(id)
-	// NILVALUE is '-'
-	hostname := "-"
+	hostname, _ := os.Hostname()
+	hostname = strings.TrimSpace(hostname)
+	if hostname == "" {
+		hostname = "localhost"
+	}
 	procid := "-"
 	if appName == "" {
 		appName = "beats"
@@ -84,7 +84,11 @@ func (r *remoteSysClient) formatRFC5424(facility, severity string, appName strin
 func (r *remoteSysClient) formatRFC3164(facility, severity string, tag string, msg string) string {
 	pri := priFromFacilitySeverity(facility, severity)
 	ts := time.Now().Format("Jan 2 15:04:05")
-	hostname := "-"
+	hostname, _ := os.Hostname()
+	hostname = strings.TrimSpace(hostname)
+	if hostname == "" {
+		hostname = "localhost"
+	}
 	safeMsg := strings.ReplaceAll(msg, "\n", "\\n")
 	if tag == "" {
 		tag = "beats"
@@ -98,10 +102,14 @@ func (r *remoteSysClient) connect() error {
 	if r.conn != nil {
 		return nil
 	}
-	if r.cfg.Network == "" || r.cfg.Host == "" {
-		return nil
+	if r.cfg.Host == "" {
+		return fmt.Errorf("syslog host was not configured")
 	}
-	conn, err := net.DialTimeout(r.cfg.Network, r.cfg.Host, 5*time.Second)
+	network := r.cfg.Network
+	if network == "" {
+		network = "udp"
+	}
+	conn, err := net.DialTimeout(network, r.cfg.Host, 5*time.Second)
 	if err != nil {
 		return err
 	}
@@ -129,37 +137,10 @@ func (r *remoteSysClient) Publish(ctx context.Context, batch publisher.Batch) er
 	conn := r.conn
 	r.connMu.Unlock()
 
-	// If no conn and no remote configured, fallback to local syslog using simple file/socket write
 	if conn == nil {
-		// Try to fallback to local syslog via UDP localhost:514
-		remote := "udp"
-		addr := "127.0.0.1:514"
-		c := r.cfg
-		conn, _ = net.DialTimeout(remote, addr, 2*time.Second)
-		if conn == nil {
-			// handle failure according to config
-			r.handleFailure(batch)
-			return fmt.Errorf("no remote connection and local syslog unreachable")
-		}
-		defer conn.Close()
-		w := bufio.NewWriter(conn)
-		for _, ev := range evs {
-			msg := eventMessage(ev)
-			var b string
-			if format == "rfc5424" {
-				b = r.formatRFC5424(c.Facility, c.Severity, r.appName, msg)
-			} else {
-				b = r.formatRFC3164(c.Facility, c.Severity, r.appName, msg)
-			}
-			_, err := w.WriteString(b + "\n")
-			if err != nil {
-				r.handleFailure(batch)
-				return err
-			}
-		}
-		_ = w.Flush()
-		batch.ACK()
-		return nil
+		// handle failure according to config
+		r.handleFailure(batch)
+		return fmt.Errorf("remote connection unreachable")
 	}
 
 	// With an established conn, write messages according to the configured format.
@@ -223,10 +204,7 @@ func eventMessage(ev publisher.Event) string {
 }
 
 func (r *remoteSysClient) String() string {
-	if r.cfg.Network != "" && r.cfg.Host != "" {
-		return fmt.Sprintf("syslog(%s://%s)", r.cfg.Network, r.cfg.Host)
-	}
-	return "syslog(local)"
+	return fmt.Sprintf("syslog(%s://%s)", r.cfg.Network, r.cfg.Host)
 }
 
 // priFromFacilitySeverity maps facility and severity to PRI numeric value.
